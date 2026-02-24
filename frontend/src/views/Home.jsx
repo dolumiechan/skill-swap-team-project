@@ -1,25 +1,35 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Search } from 'lucide-react'
 import OfferCard from '../components/OfferCard'
 import PurchaseModal from '../components/PurchaseModal'
 import { getServices, getCategories } from '../data/api'
 
-function Home() {
+function Home({ onPurchase, onStartTeach, currentUser }) {
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedCategory, setSelectedCategory] = useState('all')
     const [selectedOffer, setSelectedOffer] = useState(null)
-    const [offers, setOffers] = useState([])
+    const [offers, setOffersState] = useState([])
     const [categories, setCategories] = useState([
         { id: 'all', label: 'Все' },
     ])
-    const [filteredOffers, setFilteredOffers] = useState([])
+
+    const filteredOffers = useMemo(() => {
+        const term = searchTerm.toLowerCase().trim();
+        return offers.filter(offer => {
+            const matchesSearch =
+                offer.title?.toLowerCase().includes(term) ||
+                offer.description?.toLowerCase().includes(term) ||
+                offer.author?.toLowerCase().includes(term);
+            const matchesCategory =
+                selectedCategory === 'all' || offer.category_id === selectedCategory;
+            return matchesSearch && matchesCategory;
+        });
+    }, [searchTerm, selectedCategory, offers]);
 
     useEffect(() => {
-        // Загрузка офферов
         getServices()
-            .then(data => setOffers(Array.isArray(data) ? data : (data.data || [])))
-            .catch(() => setOffers([]))
-        // Загрузка категорий
+            .then(data => setOffersState(Array.isArray(data) ? data : (data.data || [])))
+            .catch(() => setOffersState([]))
         getCategories()
             .then(data => {
                 setCategories([
@@ -30,27 +40,13 @@ function Home() {
             .catch(() => setCategories([{ id: 'all', label: 'Все' }]))
     }, [])
 
-    useEffect(() => {
-        const term = searchTerm.toLowerCase().trim();
-        const filtered = offers.filter(offer => {
-            const matchesSearch =
-                offer.title?.toLowerCase().includes(term) ||
-                offer.description?.toLowerCase().includes(term) ||
-                offer.author?.toLowerCase().includes(term);
-            const matchesCategory =
-                selectedCategory === 'all' || offer.category_id === selectedCategory;
-            return matchesSearch && matchesCategory;
-        });
-        setFilteredOffers(filtered);
-    }, [searchTerm, selectedCategory, offers]);
-
     const handleBuyClick = (offerId) => {
         const offer = offers.find(o => o.id === offerId)
         if (offer) setSelectedOffer(offer)
     }
 
-    const handleConfirmPurchase = (offer) => {
-        const success = onPurchase(offer)
+    const handleConfirmPurchase = async (offer) => {
+        const success = await onPurchase(offer)
         if (success) {
             setSelectedOffer(null)
         }
@@ -71,7 +67,10 @@ function Home() {
                         Предлагай свои умения и получай коины. Трать их на обучение у других.
                     </p>
                     <div className="flex flex-wrap gap-4">
-                        <button className="bg-white text-indigo-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition shadow-md">
+                        <button
+                            className="bg-white text-indigo-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition shadow-md"
+                            onClick={onStartTeach}
+                        >
                             Начать обучать
                         </button>
                     </div>
@@ -138,6 +137,7 @@ function Home() {
                                 offer={offer}
                                 categoryName={categoryName}
                                 onBuy={handleBuyClick}
+                                currentUserId={currentUser?.id}
                             />
                         );
                     })}
@@ -150,6 +150,7 @@ function Home() {
                 onClose={closeModal}
                 offer={selectedOffer}
                 onConfirm={handleConfirmPurchase}
+                currentUser={currentUser}
             />
         </div>
     )

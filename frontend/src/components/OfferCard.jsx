@@ -1,15 +1,15 @@
 import { Coins } from 'lucide-react';
 import PropTypes from 'prop-types';
-import { currentUser } from '../data/mockData';
+import { PLACEHOLDER_AVATAR_SM, PLACEHOLDER_OFFER_IMAGE } from '../data/placeholders';
 
-export default function OfferCard({ offer, onBuy, categoryName }) {
-    const isOwnOffer = offer.userId === currentUser.id;
+export default function OfferCard({ offer, onBuy, categoryName, currentUserId }) {
+    const isOwnOffer = currentUserId != null && (offer.user_id === currentUserId || offer.userId === currentUserId);
 
     return (
         <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full card-hover">
             <div className="relative h-48 overflow-hidden">
                 <img
-                    src={offer.image}
+                    src={offer.image || PLACEHOLDER_OFFER_IMAGE}
                     alt={offer.title}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                 />
@@ -35,11 +35,11 @@ export default function OfferCard({ offer, onBuy, categoryName }) {
 
                 <div className="flex items-center mb-5">
                     <img
-                        src={offer.avatar}
-                        alt={offer.author}
+                        src={offer.user?.avatar ?? offer.avatar ?? PLACEHOLDER_AVATAR_SM}
+                        alt={offer.user?.name ?? offer.author ?? ''}
                         className="w-8 h-8 rounded-full mr-2 object-cover border border-gray-200"
                     />
-                    <span className="text-sm text-gray-700 font-medium">{offer.author}</span>
+                    <span className="text-sm text-gray-700 font-medium">{offer.user?.name ?? offer.author ?? 'Автор'}</span>
                 </div>
 
                 <button
@@ -63,15 +63,19 @@ export default function OfferCard({ offer, onBuy, categoryName }) {
 OfferCard.propTypes = {
     offer: PropTypes.shape({
         id: PropTypes.number.isRequired,
-        userId: PropTypes.number.isRequired,
-        author: PropTypes.string.isRequired,
-        avatar: PropTypes.string.isRequired,
+        user_id: PropTypes.number,
+        userId: PropTypes.number,
+        author: PropTypes.string,
+        avatar: PropTypes.string,
         title: PropTypes.string.isRequired,
-        description: PropTypes.string.isRequired,
-        category: PropTypes.string.isRequired,
+        description: PropTypes.string,
+        category: PropTypes.string,
         price: PropTypes.number.isRequired,
-        image: PropTypes.string.isRequired,
+        image: PropTypes.string,
+        user: PropTypes.object,
         createdAt: PropTypes.string,
     }).isRequired,
     onBuy: PropTypes.func.isRequired,
+    categoryName: PropTypes.string,
+    currentUserId: PropTypes.number,
 };
