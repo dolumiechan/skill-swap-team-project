@@ -11,11 +11,12 @@ class CategorySeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run(): void
-    {
-        Category::create(['name' => 'Музыка', 'slug' => 'music']);
-        Category::create(['name' => 'Программирование', 'slug' => 'programming']);
-        Category::create(['name' => 'Математика', 'slug' => 'math']);
-        Category::create(['name' => 'Языки', 'slug' => 'languages']);
-    }
+     public function run(): void
+     {
+        Category::firstOrCreate(['slug' => 'music'], ['name' => 'Музыка']);
+        Category::firstOrCreate(['slug' => 'education'], ['name' => 'Образование']);
+        Category::firstOrCreate(['slug' => 'art'], ['name' => 'Искусство']);
+        Category::firstOrCreate(['slug' => 'tech'], ['name' => 'Технологии']);
+        Category::firstOrCreate(['slug' => 'sport'], ['name' => 'Спорт']);
+     }
 }

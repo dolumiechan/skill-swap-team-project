@@ -21,7 +21,8 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password)
+            'password' => Hash::make($request->password),
+            'coins' => 500,
         ]);
 
         // Создание токена для автоматического входа после регистрации
@@ -64,7 +65,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
-        $user = User::with('services')->findOrFail($id);
+        $user = User::with(['services.category'])->findOrFail($id);
         return response()->json($user);
     }
     

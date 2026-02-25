@@ -31,6 +31,16 @@ class User extends Authenticatable
     ];
 
     /**
+     * Дополнительные поля в JSON (для фронта — баланс как balance)
+     */
+    protected $appends = ['balance'];
+
+    public function getBalanceAttribute(): int
+    {
+        return (int) ($this->attributes['coins'] ?? 0);
+    }
+
+    /**
      * Преобразование типов
      */
     protected $casts = [
