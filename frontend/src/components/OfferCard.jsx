@@ -1,15 +1,24 @@
 import { Coins } from 'lucide-react';
 import PropTypes from 'prop-types';
-import { PLACEHOLDER_AVATAR_SM, PLACEHOLDER_OFFER_IMAGE } from '../data/placeholders';
+import { currentUser } from '../data/mockData';
 
-export default function OfferCard({ offer, onBuy, categoryName, currentUserId }) {
-    const isOwnOffer = currentUserId != null && (offer.user_id === currentUserId || offer.userId === currentUserId);
+export default function OfferCard({ offer, onBuy }) {
+    const isOwnOffer = offer.userId === currentUser.id;
+
+    const categoryName = {
+        education: 'Образование',
+        music: 'Музыка',
+        art: 'Искусство',
+        tech: 'Технологии',
+        sport: 'Спорт',
+        other: 'Другое',
+    }[offer.category] || offer.category;
 
     return (
         <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full card-hover">
             <div className="relative h-48 overflow-hidden">
                 <img
-                    src={offer.image || PLACEHOLDER_OFFER_IMAGE}
+                    src={offer.image}
                     alt={offer.title}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                 />
@@ -35,11 +44,11 @@ export default function OfferCard({ offer, onBuy, categoryName, currentUserId })
 
                 <div className="flex items-center mb-5">
                     <img
-                        src={offer.user?.avatar ?? offer.avatar ?? PLACEHOLDER_AVATAR_SM}
-                        alt={offer.user?.name ?? offer.author ?? ''}
+                        src={offer.avatar}
+                        alt={offer.author}
                         className="w-8 h-8 rounded-full mr-2 object-cover border border-gray-200"
                     />
-                    <span className="text-sm text-gray-700 font-medium">{offer.user?.name ?? offer.author ?? 'Автор'}</span>
+                    <span className="text-sm text-gray-700 font-medium">{offer.author}</span>
                 </div>
 
                 <button
@@ -63,19 +72,15 @@ export default function OfferCard({ offer, onBuy, categoryName, currentUserId })
 OfferCard.propTypes = {
     offer: PropTypes.shape({
         id: PropTypes.number.isRequired,
-        user_id: PropTypes.number,
-        userId: PropTypes.number,
-        author: PropTypes.string,
-        avatar: PropTypes.string,
+        userId: PropTypes.number.isRequired,
+        author: PropTypes.string.isRequired,
+        avatar: PropTypes.string.isRequired,
         title: PropTypes.string.isRequired,
-        description: PropTypes.string,
-        category: PropTypes.string,
+        description: PropTypes.string.isRequired,
+        category: PropTypes.string.isRequired,
         price: PropTypes.number.isRequired,
-        image: PropTypes.string,
-        user: PropTypes.object,
+        image: PropTypes.string.isRequired,
         createdAt: PropTypes.string,
     }).isRequired,
     onBuy: PropTypes.func.isRequired,
-    categoryName: PropTypes.string,
-    currentUserId: PropTypes.number,
 };
