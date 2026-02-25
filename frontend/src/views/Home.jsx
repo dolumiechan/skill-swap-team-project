@@ -1,41 +1,52 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Search } from 'lucide-react'
 import OfferCard from '../components/OfferCard'
 import PurchaseModal from '../components/PurchaseModal'
-import { offers as initialOffers } from '../data/mockData'
+import { getServices, getCategories } from '../data/api'
 
-export default function Home({ offers: propOffers, setOffers, onPurchase, addToast }) {
+function Home({ onPurchase, onStartTeach, currentUser }) {
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedCategory, setSelectedCategory] = useState('all')
     const [selectedOffer, setSelectedOffer] = useState(null)
+    const [offers, setOffersState] = useState([])
+    const [categories, setCategories] = useState([
+        { id: 'all', label: 'Все' },
+    ])
 
-    const [filteredOffers, setFilteredOffers] = useState(propOffers || initialOffers)
+    const filteredOffers = useMemo(() => {
+        const term = searchTerm.toLowerCase().trim();
+        return offers.filter(offer => {
+            const matchesSearch =
+                offer.title?.toLowerCase().includes(term) ||
+                offer.description?.toLowerCase().includes(term) ||
+                offer.author?.toLowerCase().includes(term);
+            const matchesCategory =
+                selectedCategory === 'all' || offer.category_id === selectedCategory;
+            return matchesSearch && matchesCategory;
+        });
+    }, [searchTerm, selectedCategory, offers]);
 
     useEffect(() => {
-        const term = searchTerm.toLowerCase().trim()
-
-        const filtered = (propOffers || initialOffers).filter(offer => {
-            const matchesSearch =
-                offer.title.toLowerCase().includes(term) ||
-                offer.description.toLowerCase().includes(term) ||
-                offer.author.toLowerCase().includes(term)
-
-            const matchesCategory =
-                selectedCategory === 'all' || offer.category === selectedCategory
-
-            return matchesSearch && matchesCategory
-        })
-
-        setFilteredOffers(filtered)
-    }, [searchTerm, selectedCategory, propOffers])
+        getServices()
+            .then(data => setOffersState(Array.isArray(data) ? data : (data.data || [])))
+            .catch(() => setOffersState([]))
+        getCategories()
+            .then(data => {
+                setCategories([
+                    { id: 'all', label: 'Все' },
+                    ...data.map(cat => ({ id: cat.id, label: cat.name }))
+                ])
+            })
+            .catch(() => setCategories([{ id: 'all', label: 'Все' }]))
+    }, [])
 
     const handleBuyClick = (offerId) => {
-        const offer = (propOffers || initialOffers).find(o => o.id === offerId)
+        const offer = offers.find(o => o.id === offerId)
         if (offer) setSelectedOffer(offer)
     }
 
-    const handleConfirmPurchase = (offer) => {
-        const success = onPurchase(offer)
+    const handleConfirmPurchase = async (offer) => {
+        const success = await onPurchase(offer)
         if (success) {
             setSelectedOffer(null)
         }
@@ -43,14 +54,7 @@ export default function Home({ offers: propOffers, setOffers, onPurchase, addToa
 
     const closeModal = () => setSelectedOffer(null)
 
-    const categories = [
-        { id: 'all', label: 'Все' },
-        { id: 'education', label: 'Образование' },
-        { id: 'music', label: 'Музыка' },
-        { id: 'art', label: 'Искусство' },
-        { id: 'tech', label: 'Технологии' },
-        { id: 'sport', label: 'Спорт' },
-    ]
+ 
 
     return (
         <div className="space-y-8 pb-12">
@@ -63,7 +67,10 @@ export default function Home({ offers: propOffers, setOffers, onPurchase, addToa
                         Предлагай свои умения и получай коины. Трать их на обучение у других.
                     </p>
                     <div className="flex flex-wrap gap-4">
-                        <button className="bg-white text-indigo-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition shadow-md">
+                        <button
+                            className="bg-white text-indigo-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition shadow-md"
+                            onClick={onStartTeach}
+                        >
                             Начать обучать
                         </button>
                     </div>
@@ -92,7 +99,7 @@ export default function Home({ offers: propOffers, setOffers, onPurchase, addToa
                     {categories.map(cat => (
                         <button
                             key={cat.id}
-                            onClick={() => setSelectedCategory(cat.id)}
+                            onClick={() => setSelectedCategory(cat.id === 'all' ? 'all' : cat.id)}
                             className={`
                 px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition
                 ${selectedCategory === cat.id
@@ -121,22 +128,32 @@ export default function Home({ offers: propOffers, setOffers, onPurchase, addToa
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredOffers.map(offer => (
-                        <OfferCard
-                            key={offer.id}
-                            offer={offer}
-                            onBuy={handleBuyClick}
-                        />
-                    ))}
+                    {filteredOffers.map(offer => {
+                        const cat = categories.find(c => c.id === offer.category_id || c.id === offer.category);
+                        const categoryName = cat ? cat.label || cat.name : offer.category_id;
+                        return (
+                            <OfferCard
+                                key={offer.id}
+                                offer={offer}
+                                categoryName={categoryName}
+                                onBuy={handleBuyClick}
+                                currentUserId={currentUser?.id}
+                            />
+                        );
+                    })}
                 </div>
             )}
+
 
             <PurchaseModal
                 isOpen={!!selectedOffer}
                 onClose={closeModal}
                 offer={selectedOffer}
                 onConfirm={handleConfirmPurchase}
+                currentUser={currentUser}
             />
         </div>
     )
 }
+
+export default Home
