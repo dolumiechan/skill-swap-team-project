@@ -12,7 +12,7 @@
 ### Шаг 1. Клонирование
 
 ```bash
-git clone <URL-репозитория> skill-swap
+git clone -b integr --single-branch https://github.com/dolumiechan/skill-swap-team-project.git
 cd skill-swap
 ```
 
